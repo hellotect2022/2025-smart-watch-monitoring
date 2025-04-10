@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Health3</string>
+    <string name="user_name_prefix">사용자 이름: %1$s</string>
+    <string name="user_serial_prefix">SerialNumber: %1$s</string>
+</resources>
