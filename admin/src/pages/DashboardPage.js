@@ -80,8 +80,9 @@ export default function DashboardPage() {
             const initUsers = result.data.map(user => ({
               name: user.name,
               bpm: 0,
-              ecg: '',
+              step: '',
               location: '',
+              beacon:'',
               ...user,
             }));
             setUsers(initUsers);
@@ -108,8 +109,13 @@ export default function DashboardPage() {
           case 'bpm':
             updatedFields.bpm = lastMessage.value;
             break;
-          case 'ecg':
-            updatedFields.ecg = lastMessage.value;
+          case 'step':
+            updatedFields.step = lastMessage.value;
+            break;
+          case 'beacon':
+            updatedFields.beacon = `${lastMessage.value.major}
+            ,${lastMessage.value.minor}
+            ,${lastMessage.value.rssi}`;
             break;
           default:
             break;
@@ -130,8 +136,13 @@ export default function DashboardPage() {
           case 'bpm':
             updated.bpm = lastMessage.value;
             break;
-          case 'ecg':
-            updated.ecg = lastMessage.value;
+          case 'step':
+            updated.step = lastMessage.value;
+            break;
+          case 'beacon':
+            updated.beacon = `${lastMessage.value.major}
+            ,${lastMessage.value.minor}
+            ,${lastMessage.value.rssi}`;
             break;
           default:
             break;
@@ -160,7 +171,7 @@ export default function DashboardPage() {
                 <th style={thTdStyle}>이름</th>
                 <th style={thTdStyle}>심박수</th>
                 <th style={thTdStyle}>위치</th>
-                <th style={thTdStyle}>심전도</th>
+                <th style={thTdStyle}>걸음수</th>
               </tr>
             </thead>
             <tbody>
@@ -172,8 +183,10 @@ export default function DashboardPage() {
                     fontWeight: 'bold',
                     color: user.bpm > 85 ? 'red' : '#111827',
                   }}>{user.bpm} bpm</td>
-                  <td style={thTdStyle}>{renderLocation(user.location)}</td>
-                  <td style={thTdStyle}>{user.ecg}</td>
+                  <td style={thTdStyle}>{renderLocation(user.location)}/
+                    ({user.beacon})
+                  </td>
+                  <td style={thTdStyle}>{user.step}</td>
                 </tr>
               ))}
             </tbody>
