@@ -38,6 +38,7 @@ import com.minew.beaconset.MinewBeacon;
 
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -85,16 +86,16 @@ public class UnifiedService extends Service implements SensorEventListener {
 
         // initialize Components
         initializeSensorManager();
-        initializeLocationClient();
+        //initializeLocationClient();
         initializeBeaconManager();
         initializePreferences();
         initializeWebSocket();
         initializeNotificationManager();
 
         // setup data collection
-        setupHeartRateSensor();
-        setupStepCounter();
-        setupLocationUpdates();
+        //setupHeartRateSensor();
+        //setupStepCounter();
+        //setupLocationUpdates();
 
         // start foreground service
         startForegroundService();
@@ -176,53 +177,71 @@ public class UnifiedService extends Service implements SensorEventListener {
 
     private void processBeaconData(List<MinewBeacon> beacons) {
         // 비콘 데이터 처리 로직
-        beacons.stream()
-                .filter(i->i.getRssi() > -50)
-                .forEach(beacon-> {
-//                        Log.d(TAG, "Beacon found: " + beacon.getName() +
-//                                " Major: " + beacon.getMajor() +
-//                                " Minor: " + beacon.getMinor() +
-//                                " RSSI: " + beacon.getRssi() +
-//                                " Battery: " + beacon.getBattery());
-                    sensorData.put("type","message");
-                    sensorData.put("sensor","beacon");
-                    Map beaconData = new HashMap();
-                    beaconData.put("deviceName",beacon.getName());
-                    beaconData.put("major",beacon.getMajor());
-                    beaconData.put("minor",beacon.getMinor());
-                    beaconData.put("rssi",beacon.getRssi());
-                    sensorData.put("value",beaconData);
-                    sensorData.put("time", DateUtils.dateTime());
-                    sensorData.put("sender",userName);
-                    sensorData.put("serial",serial);
-                    client.sendData(sensorData);
-                });
+//        beacons.stream()
+//                .distinct()
+//                .forEach(beacon -> sendBeaconToServer(beacon,"found",true));
 
+        ArrayList<Map<String,Object>> list = new ArrayList<>();
+
+        for (MinewBeacon beacon : beacons) {
+            Map<String, Object> beaconData = new HashMap<>();
+            beaconData.put("deviceName", beacon.getName());
+            beaconData.put("major", beacon.getMajor());
+            beaconData.put("minor", beacon.getMinor());
+            beaconData.put("rssi", beacon.getRssi());
+            beaconData.put("isPresent", true);
+            list.add(beaconData);
+        }
+
+        sensorData.put("type", "message");
+        sensorData.put("sensor", "beacon");
+        sensorData.put("value", list);
+        sensorData.put("time", DateUtils.dateTime());
+        sensorData.put("sender", userName);
+        sensorData.put("serial", serial);
+
+        client.sendData(sensorData);
 
     }
 
     private void handleNewBeacons(List<MinewBeacon> beacons) {
         // 새로 발견된 비콘 처리 로직
-        beacons.stream()
-                .filter(i->i.getRssi() > -50)
-                .forEach(beacon->
-                        Log.d(TAG, "Beacon new found: " + beacon.getName() +
-                                " Major: " + beacon.getMajor() +
-                                " Minor: " + beacon.getMinor() +
-                                " RSSI: " + beacon.getRssi() +
-                                " Battery: " + beacon.getBattery()));
+//        beacons.stream()
+//                .distinct()
+//                .forEach(beacon->sendBeaconToServer(beacon,"new",true));
     }
 
     private void handleDisappearedBeacons(List<MinewBeacon> beacons) {
         // 사라진 비콘 처리 로직
-        beacons.stream()
-                .filter(i->i.getRssi() > -50)
-                .forEach(beacon->
-                        Log.d(TAG, "Beacon disappeared: " + beacon.getName() +
-                                " Major: " + beacon.getMajor() +
-                                " Minor: " + beacon.getMinor() +
-                                " RSSI: " + beacon.getRssi() +
-                                " Battery: " + beacon.getBattery()));
+//        beacons.stream()
+//                .distinct()
+//                .forEach(beacon->{
+//                    sendBeaconToServer(beacon,"disappeared",false);
+//                });
+    }
+
+    private void sendBeaconToServer(MinewBeacon beacon, String state, boolean isPresent) {
+//        LogUtils.d("State : " + state +
+//                        " Name : " + beacon.getName() +
+//                        " Major : " + beacon.getMajor() +
+//                        " Minor : " + beacon.getMinor() +
+//                        " Rssi : " + beacon.getRssi() +
+//                        " Battery : " + beacon.getBattery()
+//                ,this);
+        Map<String, Object> beaconData = new HashMap<>();
+        beaconData.put("deviceName", beacon.getName());
+        beaconData.put("major", beacon.getMajor());
+        beaconData.put("minor", beacon.getMinor());
+        beaconData.put("rssi", beacon.getRssi());
+        beaconData.put("isPresent", isPresent);
+
+        sensorData.put("type", "message");
+        sensorData.put("sensor", "beacon");
+        sensorData.put("value", beaconData);
+        sensorData.put("time", DateUtils.dateTime());
+        sensorData.put("sender", userName);
+        sensorData.put("serial", serial);
+        client.sendData(sensorData);
     }
 
     public void startBeaconScanning() {

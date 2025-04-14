@@ -12,7 +12,9 @@ import org.springframework.web.reactive.socket.WebSocketSession;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
 @Component
 public class MyWebsocketHandler implements WebSocketHandler {
@@ -26,13 +28,14 @@ public class MyWebsocketHandler implements WebSocketHandler {
     public Mono<Void> handle(WebSocketSession session) {
         Flux<WebSocketMessage> output = session.receive()
                 .map(WebSocketMessage::getPayloadAsText)
-                .doOnNext(msg -> System.out.println("message-receive : " + msg))
+                //.doOnNext(msg -> System.out.println("message-receive : " + msg))
 //                .flatMap(msg -> {
 //                    HashMap data = JsonHelper.fromJson(msg, HashMap.class);
 //                    String key = data.get("serial").toString()+":"+data.get("sensor").toString();
 //                    return redisRepository.lpush(key,data).thenReturn(msg);
 //                }) // redis 에 데이타 저장
                 .flatMap(this::eventRuleCheck)
+                .doOnNext(msg -> System.out.println("message-receive : " + msg))
                 //.doOnNext(msg -> System.out.println("???"+msg))
                 .map(session::textMessage)
                 .onErrorResume(e ->{
@@ -45,22 +48,38 @@ public class MyWebsocketHandler implements WebSocketHandler {
     }
 
     public Mono<String> eventRuleCheck(String msg){
-        return Mono.fromCallable(() ->{
-            //HashMap map = JsonHelper.fromJson(msg, HashMap.class);
-
+        return Mono.defer(() ->{
             SensorDTO sensorDTO = JsonHelper.fromJson(msg,SensorDTO.class);
+            switch (sensorDTO.getSensor()) {
+                case "gps":
+                    //gpsRuleCheck();
+                    break;
+                case "step":
+                    //stepRuleCheck();
+                    break;
+                case "bpm":
+                    sensorDTO = bpmRuleCheck(sensorDTO);
+                    break;
+                case "beacon":
+                    sensorDTO=beaconRuleCheck(sensorDTO);
+                    break;
+                default:
+                    break;
+            }
             String returnValue = JsonHelper.toJson(sensorDTO);
             return redisPublisher.publishMessage("test",returnValue).thenReturn(returnValue);
-//            switch (map.get("sensor")) {
-//
-//            }
-
-//            if ("bpm".equals(map.get("sensor")) &&
-//                    (Double) map.get("value") > 60) {
-//                map.put("type","alarm");
-//            }
-//            String returnValue = JsonHelper.toJson(map);
-//            return redisPublisher.publishMessage("test",returnValue).thenReturn(returnValue);
-        }).flatMap(m->m);
+        });
     }
+
+    public SensorDTO bpmRuleCheck(SensorDTO sensorDTO){
+        if ((double) sensorDTO.getValue() > 60) sensorDTO.setType("alarm");
+        return sensorDTO;
+    }
+
+    public SensorDTO beaconRuleCheck(SensorDTO sensorDTO){
+        List<?> valueList = (List<?>) sensorDTO.getValue();
+        sensorDTO.setValue(valueList.stream().map(e->(HashMap) e).filter(v -> (int) v.get("rssi") > -60).toList());
+        return sensorDTO;
+    }
+
 }

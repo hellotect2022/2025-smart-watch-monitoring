@@ -79,7 +79,7 @@ export default function DashboardPage() {
           if (result.status == "SUCCESS") {
             const initUsers = result.data.map(user => ({
               name: user.name,
-              bpm: 0,
+              bpm: '',
               step: '',
               location: '',
               beacon:'',
@@ -107,15 +107,16 @@ export default function DashboardPage() {
             updatedFields.location = `${lastMessage.value.lng},${lastMessage.value.lat}`;
             break;
           case 'bpm':
-            updatedFields.bpm = lastMessage.value;
+            updatedFields.bpm = lastMessage;
             break;
           case 'step':
             updatedFields.step = lastMessage.value;
             break;
           case 'beacon':
-            updatedFields.beacon = `${lastMessage.value.major}
-            ,${lastMessage.value.minor}
-            ,${lastMessage.value.rssi}`;
+            updatedFields.beacon = lastMessage;
+            // `${lastMessage.value.major}
+            // ,${lastMessage.value.minor}
+            // ,${lastMessage.value.rssi}`;
             break;
           default:
             break;
@@ -134,15 +135,16 @@ export default function DashboardPage() {
             updated.location = `${lastMessage.value.lng},${lastMessage.value.lat}`;
             break;
           case 'bpm':
-            updated.bpm = lastMessage.value;
+            updated.bpm = lastMessage;
             break;
           case 'step':
             updated.step = lastMessage.value;
             break;
           case 'beacon':
-            updated.beacon = `${lastMessage.value.major}
-            ,${lastMessage.value.minor}
-            ,${lastMessage.value.rssi}`;
+            updated.beacon = lastMessage;
+            // `${lastMessage.value.major}
+            // ,${lastMessage.value.minor}
+            // ,${lastMessage.value.rssi}`;
             break;
           default:
             break;
@@ -151,6 +153,7 @@ export default function DashboardPage() {
         return updated;
       });
     }
+    console.log('fuck',users)
   }, [lastMessage]);
 
   return (
@@ -181,10 +184,14 @@ export default function DashboardPage() {
                   <td style={{
                     ...thTdStyle,
                     fontWeight: 'bold',
-                    color: user.bpm > 85 ? 'red' : '#111827',
-                  }}>{user.bpm} bpm</td>
+                    color: user.bpm.type =="alarm" ? 'red' : '#111827',
+                  }}>{user.bpm.value} bpm</td>
                   <td style={thTdStyle}>{renderLocation(user.location)}/
-                    ({user.beacon})
+                    {user.beacon.value?.map((beacon,index)=>(
+                      <div key={index}>
+                        {beacon.major}, {beacon.minor}, {beacon.rssi}
+                      </div>
+                    ))}
                   </td>
                   <td style={thTdStyle}>{user.step}</td>
                 </tr>
